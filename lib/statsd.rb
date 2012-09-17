@@ -92,7 +92,7 @@ class Statsd
   # @param array of metrics
   # @see #time, #count, #gauge
   # @example Send a time, count and gauge metric
-  #   $statsd.bulk [:foobar, :count, 1], [:toobar, :time, 676], [:roobar, :gauge, 42]
+  #   $statsd.bulk [:foobar, 1, :count], [:toobar, 676, :time], [:roobar, 42, :gauge]
   def bulk(*metrics)
     prefix = @namespace.nil? ? "" : "#{@namespace}."
     lines  = metrics.map do |metric|
