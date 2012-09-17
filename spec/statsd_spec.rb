@@ -89,6 +89,21 @@ describe Statsd do
     end
   end
 
+  describe "#bulk" do
+    def send_bulk
+      @statsd.bulk [:foobar, 1, :count], [:toobar, 676, :time], [:roobar, 42, :gauge]
+    end
+    it "should send many metrics" do
+      send_bulk
+      @statsd.socket.recv.must_equal [ "foobar:1|c\ntoobar:676|ms\nroobar:42|g" ]
+    end
+    it "should add prefix" do
+      @statsd.namespace = :barfoo
+      send_bulk
+      @statsd.socket.recv.must_equal [ "barfoo.foobar:1|c\nbarfoo.toobar:676|ms\nbarfoo.roobar:42|g" ]
+    end
+  end
+
   describe "#sampled" do
     describe "when the sample rate is 1" do
       it "should yield" do

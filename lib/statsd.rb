@@ -87,17 +87,35 @@ class Statsd
     result
   end
 
+  # Send multiple metrics in a single packet.
+  #
+  # @param array of metrics
+  # @see #time, #count, #gauge
+  # @example Send a time, count and gauge metric
+  #   $statsd.bulk [:foobar, :count, 1], [:toobar, :time, 676], [:roobar, :gauge, 42]
+  def bulk(*metrics)
+    prefix = @namespace.nil? ? "" : "#{@namespace}."
+    lines  = metrics.map do |metric|
+      type = { :count => :c, :time => :ms, :gauge => :g }[metric.last]
+      "#{prefix}#{escape metric.first}:#{metric[1]}|#{type}"
+    end
+    send_to_socket lines.join("\n")
+  end
+
   private
 
   def sampled(sample_rate)
     yield unless sample_rate < 1 and rand > sample_rate
   end
 
+  def escape(stat)
+    stat.to_s.gsub('::', '.').gsub(RESERVED_CHARS_REGEX, '_')
+  end
+
   def send(stat, delta, type, sample_rate=1)
     sampled(sample_rate) do
       prefix = "#{@namespace}." unless @namespace.nil?
-      stat = stat.to_s.gsub('::', '.').gsub(RESERVED_CHARS_REGEX, '_')
-      send_to_socket("#{prefix}#{stat}:#{delta}|#{type}#{'|@' << sample_rate.to_s if sample_rate < 1}")
+      send_to_socket("#{prefix}#{escape stat}:#{delta}|#{type}#{'|@' << sample_rate.to_s if sample_rate < 1}")
     end
   end
 
